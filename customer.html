@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UVU — 제품 선택</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Bebas+Neue&display=swap');
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #111111;
+    --border: #222222;
+    --accent: #e8e0d0;
+    --muted: #444444;
+    --text: #f0ece4;
+    --danger: #c0392b;
+    --success: #27ae60;
+    --mono: 'DM Mono', monospace;
+    --display: 'Bebas Neue', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    padding-bottom: 120px;
+  }
+
+  header {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-size: 32px;
+    letter-spacing: 4px;
+    color: var(--accent);
+  }
+
+  .ticket-badge {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  .ticket-no {
+    font-size: 22px;
+    color: var(--accent);
+    font-family: var(--display);
+    letter-spacing: 2px;
+  }
+
+  .status-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+  }
+
+  .status-bar.confirmed { color: #f39c12; border-bottom-color: #f39c12; }
+  .status-bar.picking   { color: #3498db; border-bottom-color: #3498db; }
+  .status-bar.ready     { color: var(--success); border-bottom-color: var(--success); }
+  .status-bar.paid      { color: var(--success); }
+
+  .section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    text-transform: uppercase;
+  }
+
+  .product-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+    padding: 14px;
+  }
+
+  .product-name {
+    font-size: 13px;
+    color: var(--accent);
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+  }
+
+  .product-sku {
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .size-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .size-btn {
+    width: 44px;
+    height: 36px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 1px;
+  }
+
+  .size-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .size-btn.selected {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--bg);
+  }
+
+  .size-btn:disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+    text-decoration: line-through;
+  }
+
+  .cart-section {
+    padding: 20px;
+  }
+
+  .cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+
+  .cart-item-name { color: var(--accent); }
+  .cart-item-size { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    transition: color 0.15s;
+  }
+
+  .remove-btn:hover { color: var(--danger); }
+
+  .empty-cart {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    padding: 30px 0;
+    letter-spacing: 1px;
+  }
+
+  .bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+    padding: 16px 20px;
+  }
+
+  .save-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    font-family: var(--display);
+    font-size: 18px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+  }
+
+  .save-btn:hover { opacity: 0.85; }
+  .save-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .saved-note {
+    text-align: center;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+    letter-spacing: 1px;
+  }
+
+  /* 완료 화면 */
+  .complete-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .complete-icon {
+    font-size: 48px;
+    margin-bottom: 24px;
+  }
+
+  .complete-title {
+    font-family: var(--display);
+    font-size: 36px;
+    letter-spacing: 4px;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .complete-sub {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    line-height: 1.8;
+  }
+
+  .loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 2px;
+  }
+
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--accent);
+    color: var(--bg);
+    padding: 10px 20px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- 메인 화면 -->
+<div id="mainView">
+  <header>
+    <div class="logo">UVU</div>
+    <div class="ticket-badge">
+      <div>번호표</div>
+      <div class="ticket-no" id="ticketDisplay">—</div>
+    </div>
+  </header>
+
+  <div class="status-bar" id="statusBar">대기중 — 입장 후 직원이 확정합니다</div>
+
+  <div id="productList" class="loading">재고 불러오는 중...</div>
+
+  <div class="cart-section">
+    <div class="section-label">선택한 제품</div>
+    <div id="cartList"><div class="empty-cart">아직 선택한 제품이 없어요</div></div>
+  </div>
+</div>
+
+<!-- 결제 완료 화면 -->
+<div class="complete-screen" id="completeView">
+  <div class="complete-icon">✓</div>
+  <div class="complete-title">결제 완료</div>
+  <div class="complete-sub">
+    오늘도 달려주셔서 감사합니다<br>
+    YOU VS YOU
+  </div>
+</div>
+
+<div class="bottom-bar" id="bottomBar">
+  <button class="save-btn" id="saveBtn" onclick="saveCart()">찜 저장</button>
+  <div class="saved-note" id="savedNote"></div>
+</div>
+
+<script>
+  // ── 설정 ────────────────────────────────────────────────
+  const API_URL = 'https://script.google.com/macros/s/AKfycbyDT-0SvCtQGM4fqPbhy7CLfprXSDyiTIxUCImQY1XbKjCcsRajscYodW-vD_yzW8rN/exec'; // 배포 후 교체
+
+  // URL 파라미터에서 번호표 읽기
+  const params = new URLSearchParams(window.location.search);
+  const ticketNo = params.get('t') || '00';
+  document.getElementById('ticketDisplay').textContent = ticketNo;
+
+  let inventory = [];
+  let cart = {}; // { 'SKU-사이즈': { sku, name, size } }
+  let currentStatus = null;
+
+  // ── 초기화 ───────────────────────────────────────────────
+  async function init() {
+    await loadInventory();
+    await checkStatus();
+    setInterval(checkStatus, 8000); // 8초마다 상태 확인
+  }
+
+  async function loadInventory() {
+    try {
+      const res = await api({ action: 'getInventory' });
+      inventory = res.items.filter(i => {
+        const avail = (i['초기수량'] || 0) - (i['예약수량'] || 0) - (i['판매수량'] || 0);
+        return avail > 0;
+      });
+      renderProducts();
+    } catch(e) {
+      document.getElementById('productList').innerHTML = '<div class="loading">재고 로딩 실패</div>';
+    }
+  }
+
+  async function checkStatus() {
+    try {
+      const res = await api({ action: 'getOrder', ticketNo });
+      if (res.status === currentStatus) return;
+      currentStatus = res.status;
+      updateStatusBar(res.status);
+
+      if (res.status === '결제완료') {
+        document.getElementById('mainView').style.display = 'none';
+        document.getElementById('bottomBar').style.display = 'none';
+        document.getElementById('completeView').style.display = 'flex';
+      }
+    } catch(e) {}
+  }
+
+  function updateStatusBar(status) {
+    const bar = document.getElementById('statusBar');
+    const msgs = {
+      '찜':      { text: '찜 저장됨 — 입장 후 직원이 확정합니다', cls: '' },
+      '확정':    { text: '✓ 확정됨 — 3층에서 제품을 준비하고 있어요', cls: 'confirmed' },
+      '피킹완료':{ text: '✓ 준비 완료 — 캐셔에서 결제해주세요', cls: 'picking' },
+      '결제완료':{ text: '✓ 결제 완료', cls: 'ready' },
+    };
+    const m = msgs[status] || { text: '대기중 — 입장 후 직원이 확정합니다', cls: '' };
+    bar.textContent = m.text;
+    bar.className = 'status-bar ' + m.cls;
+  }
+
+  // ── 제품 렌더링 ──────────────────────────────────────────
+  function renderProducts() {
+    // SKU별로 그루핑
+    const grouped = {};
+    inventory.forEach(item => {
+      if (!grouped[item['SKU']]) {
+        grouped[item['SKU']] = { sku: item['SKU'], name: item['제품명'], sizes: [] };
+      }
+      grouped[item['SKU']].sizes.push({
+        size: item['사이즈'],
+        avail: (item['초기수량'] || 0) - (item['예약수량'] || 0) - (item['판매수량'] || 0)
+      });
+    });
+
+    const container = document.getElementById('productList');
+    if (Object.keys(grouped).length === 0) {
+      container.innerHTML = '<div class="loading">현재 재고가 없습니다</div>';
+      return;
+    }
+
+    container.innerHTML = '<div class="section"><div class="section-label">오늘의 드롭</div>' +
+      Object.values(grouped).map(p => `
+        <div class="product-card">
+          <div class="product-name">${p.name}</div>
+          <div class="product-sku">${p.sku}</div>
+          <div class="size-row">
+            ${p.sizes.map(s => `
+              <button
+                class="size-btn ${cart[p.sku+'-'+s.size] ? 'selected' : ''}"
+                ${s.avail <= 0 ? 'disabled' : ''}
+                onclick="toggleSize('${p.sku}','${p.name}','${s.size}')"
+              >${s.size}</button>
+            `).join('')}
+          </div>
+        </div>
+      `).join('') + '</div>';
+  }
+
+  function toggleSize(sku, name, size) {
+    const key = sku + '-' + size;
+    if (cart[key]) {
+      delete cart[key];
+    } else {
+      cart[key] = { sku, name, size, qty: 1 };
+    }
+    renderProducts();
+    renderCart();
+  }
+
+  // ── 장바구니 렌더링 ──────────────────────────────────────
+  function renderCart() {
+    const items = Object.values(cart);
+    const el = document.getElementById('cartList');
+    if (items.length === 0) {
+      el.innerHTML = '<div class="empty-cart">아직 선택한 제품이 없어요</div>';
+      return;
+    }
+    el.innerHTML = items.map(i => `
+      <div class="cart-item">
+        <div>
+          <div class="cart-item-name">${i.name}</div>
+          <div class="cart-item-size">${i.sku} / ${i.size}</div>
+        </div>
+        <button class="remove-btn" onclick="removeItem('${i.sku}-${i.size}')">×</button>
+      </div>
+    `).join('');
+  }
+
+  function removeItem(key) {
+    delete cart[key];
+    renderProducts();
+    renderCart();
+  }
+
+  // ── 찜 저장 ──────────────────────────────────────────────
+  async function saveCart() {
+    const items = Object.values(cart);
+    if (items.length === 0) { showToast('제품을 선택해주세요'); return; }
+
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
+
+    try {
+      await api({ action: 'addToCart', ticketNo, items });
+      showToast('찜이 저장되었어요');
+      document.getElementById('savedNote').textContent = '입장 후 직원이 확정합니다';
+      updateStatusBar('찜');
+    } catch(e) {
+      showToast('저장 실패 — 다시 시도해주세요');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '찜 저장';
+    }
+  }
+
+  // ── 유틸 ────────────────────────────────────────────────
+  async function api(body) {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2000);
+  }
+
+  init();
+</script>
+</body>
+</html>
