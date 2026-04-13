@@ -268,6 +268,126 @@
   }
 
   .toast.show { opacity: 1; }
+
+  /* 카카오 채널 배너 */
+  .kakao-banner {
+    margin: 16px 20px;
+    border: 1px solid #3A1D1D;
+    background: #111111;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    text-decoration: none;
+  }
+
+  .kakao-banner:hover { border-color: #F9E000; }
+
+  .kakao-icon {
+    width: 36px;
+    height: 36px;
+    background: #F9E000;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 18px;
+  }
+
+  .kakao-text { flex: 1; }
+
+  .kakao-title {
+    font-size: 12px;
+    color: var(--accent);
+    letter-spacing: 0.5px;
+    margin-bottom: 3px;
+  }
+
+  .kakao-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.5px;
+    line-height: 1.5;
+  }
+
+  .kakao-arrow {
+    font-size: 14px;
+    color: var(--muted);
+  }
+
+  /* 품절 배너 */
+  .soldout-banner {
+    display: none;
+    margin: 0 20px 16px;
+    border: 1px solid #333;
+    background: #111;
+    padding: 14px 16px;
+  }
+
+  .soldout-title {
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+
+  .soldout-sub {
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+  .soldout-kakao-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background: #F9E000;
+    border: none;
+    color: #111;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  /* 결제완료 카카오 */
+  .complete-kakao {
+    margin-top: 32px;
+    border: 1px solid #222;
+    padding: 20px;
+    text-align: center;
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .complete-kakao-title {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+  .complete-kakao-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: #F9E000;
+    color: #111;
+    font-family: var(--display);
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-decoration: none;
+    transition: opacity 0.15s;
+  }
+
+  .complete-kakao-btn:hover { opacity: 0.85; }
 </style>
 </head>
 <body>
@@ -286,6 +406,23 @@
 
   <div class="status-bar" id="statusBar">대기중 — 입장 후 직원이 확정합니다</div>
 
+  <!-- 접점 1: 줄 서는 동안 -->
+  <a class="kakao-banner" href="http://pf.kakao.com/_YwyMX" target="_blank">
+    <div class="kakao-icon">💬</div>
+    <div class="kakao-text">
+      <div class="kakao-title">다음 드롭 일정을 가장 먼저 받고 싶다면</div>
+      <div class="kakao-sub">채널 추가 시 드롭 48시간 전 선공개 · 스페셜 드롭 멤버 전용 알림</div>
+    </div>
+    <div class="kakao-arrow">›</div>
+  </a>
+
+  <!-- 접점 3: 품절 시 (JS로 제어) -->
+  <div class="soldout-banner" id="soldoutBanner">
+    <div class="soldout-title">원하시는 사이즈가 없으셨나요?</div>
+    <div class="soldout-sub">다음 드롭 알림을 받아보세요.<br>채널 추가 멤버에게 일정을 먼저 공유합니다.</div>
+    <a class="soldout-kakao-btn" href="http://pf.kakao.com/_YwyMX" target="_blank">카카오 채널 추가</a>
+  </div>
+
   <div id="productList" class="loading">재고 불러오는 중...</div>
 
   <div class="cart-section">
@@ -301,6 +438,11 @@
   <div class="complete-sub">
     오늘도 달려주셔서 감사합니다<br>
     YOU VS YOU
+  </div>
+  <!-- 접점 2: 결제 완료 직후 -->
+  <div class="complete-kakao">
+    <div class="complete-kakao-title">다음 드롭도 놓치지 마세요<br>채널 추가 멤버에게 일정을 먼저 알립니다</div>
+    <a class="complete-kakao-btn" href="http://pf.kakao.com/_YwyMX" target="_blank">카카오 채널 추가</a>
   </div>
 </div>
 
@@ -406,6 +548,15 @@
           </div>
         </div>
       `).join('') + '</div>';
+
+    // 품절 배너: 전체 사이즈의 50% 이상 소진 시 노출
+    const totalSizes = inventory.length;
+    const soldoutSizes = inventory.filter(i =>
+      (i['초기수량'] || 0) - (i['예약수량'] || 0) - (i['판매수량'] || 0) <= 0
+    ).length;
+    if (totalSizes > 0 && soldoutSizes / totalSizes >= 0.5) {
+      document.getElementById('soldoutBanner').style.display = 'block';
+    }
   }
 
   function toggleSize(sku, name, size) {
