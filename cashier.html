@@ -78,7 +78,51 @@
     padding: 16px;
   }
 
-  .confirm-input-row {
+  .issue-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--green);
+    border: none;
+    color: var(--bg);
+    font-family: var(--display);
+    font-size: 22px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    margin-bottom: 16px;
+  }
+
+  .issue-btn:hover { opacity: 0.85; }
+
+  .current-ticket {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--green);
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: center;
+  }
+
+  .current-ticket-label {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+
+  .current-ticket-num {
+    font-family: var(--display);
+    font-size: 52px;
+    letter-spacing: 4px;
+    color: var(--green);
+  }
+
+  .current-ticket-guide {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+    letter-spacing: 1px;
+  }
     display: flex;
     gap: 10px;
     margin-bottom: 16px;
@@ -339,6 +383,16 @@
 
 <!-- 확정 탭 -->
 <div id="view-confirm" class="confirm-section">
+  <!-- 번호 자동 발급 -->
+  <button class="issue-btn" onclick="issueTicket()">다음 번호 발급</button>
+
+  <!-- 현재 발급 번호 표시 -->
+  <div class="current-ticket" id="currentTicket">
+    <div class="current-ticket-label">현재 발급 번호</div>
+    <div class="current-ticket-num" id="currentTicketNum">—</div>
+    <div class="current-ticket-guide">고객에게 번호를 알려주세요 → QR 스캔 후 이 번호 입력</div>
+  </div>
+
   <div class="confirm-input-row">
     <input type="number" class="ticket-input" id="ticketInput" placeholder="번호표" min="1" max="999"
       onkeydown="if(event.key==='Enter') previewOrder()">
@@ -369,6 +423,18 @@
   const API_URL = 'https://script.google.com/macros/s/AKfycbx8DAIb67nogTSaRoBQCWKqvfbLkIt8Y2kPpJ-qkXFiPHUQpH8pmR3VZP5JL57hwA/exec';
 
   let currentTab = 'confirm';
+  let lastIssuedTicket = 0;
+
+  // ── 번호 자동 발급 ───────────────────────────────────────
+  function issueTicket() {
+    lastIssuedTicket += 1;
+    const num = lastIssuedTicket;
+    document.getElementById('currentTicketNum').textContent = num;
+    document.getElementById('currentTicket').style.display = 'block';
+    // 조회 입력창에도 자동 입력
+    document.getElementById('ticketInput').value = num;
+    previewOrder();
+  }
   let previewData = null;
   let modalItems = [];
   let modalTicketNo = null;
