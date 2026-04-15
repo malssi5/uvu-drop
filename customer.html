@@ -186,6 +186,37 @@ header {
   height: 1px;
   background: var(--border);
 }
+.qty-ctrl {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 1px solid var(--black);
+  height: 40px;
+}
+.qty-btn {
+  width: 36px;
+  height: 100%;
+  background: transparent;
+  border: none;
+  color: var(--black);
+  font-size: 16px;
+  font-weight: 300;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s;
+}
+.qty-btn:active:not(:disabled) { background: var(--cream); }
+.qty-btn:disabled { color: var(--light); cursor: not-allowed; }
+.qty-num {
+  padding: 0 10px;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--black);
+  white-space: nowrap;
+  font-weight: 400;
+}
 
 /* LOADING */
 .loading {
@@ -476,13 +507,21 @@ function renderProducts() {
             <div class="size-row">
               ${p.sizes.map(s => {
                 const key = p.sku + '-' + s.size;
-                const selected = !!cart[key];
+                const qty      = cart[key] ? cart[key].qty : 0;
                 const soldout  = s.avail <= 0;
-                const blocked  = !selected && atLimit; // 한도 초과 시 미선택 버튼 비활성화
+                const blocked  = atLimit && qty === 0;
+                if (qty > 0) {
+                  // 수량 표시 + +/- 버튼
+                  return `<div class="qty-ctrl">
+                    <button class="qty-btn" onclick="removeSize('${p.sku}','${s.size}')">−</button>
+                    <span class="qty-num">${s.size} × ${qty}</span>
+                    <button class="qty-btn" onclick="addSize('${p.sku}','${p.name}','${s.size}')" ${atLimit ? 'disabled' : ''}>+</button>
+                  </div>`;
+                }
                 return `<button
-                  class="size-btn${selected ? ' selected' : ''}"
+                  class="size-btn"
                   ${soldout || blocked ? 'disabled' : ''}
-                  onclick="toggleSize('${p.sku}','${p.name}','${s.size}')"
+                  onclick="addSize('${p.sku}','${p.name}','${s.size}')"
                 >${s.size}</button>`;
               }).join('')}
             </div>
@@ -498,20 +537,34 @@ function renderProducts() {
   }
 }
 
-// ── 사이즈 토글 ───────────────────────────────────────
-function toggleSize(sku, name, size) {
+// ── 수량 조절 ─────────────────────────────────────────
+function getSkuQty(sku) {
+  return Object.values(cart)
+    .filter(i => i.sku === sku)
+    .reduce((sum, i) => sum + i.qty, 0);
+}
+
+function addSize(sku, name, size) {
   const key = sku + '-' + size;
-  if (cart[key]) {
-    delete cart[key];
-  } else {
-    // 같은 SKU의 선택 수량 체크
-    const skuQty = Object.keys(cart).filter(k => k.startsWith(sku + '-')).length;
-    if (skuQty >= MAX_QTY_PER_SKU) {
-      showToast(`최대 ${MAX_QTY_PER_SKU}개까지 선택 가능합니다`);
-      return;
-    }
-    cart[key] = { sku, name, size };
+  const skuQty = getSkuQty(sku);
+  if (skuQty >= MAX_QTY_PER_SKU) {
+    showToast(`품목당 최대 ${MAX_QTY_PER_SKU}개까지 가능합니다`);
+    return;
   }
+  if (cart[key]) {
+    cart[key].qty += 1;
+  } else {
+    cart[key] = { sku, name, size, qty: 1 };
+  }
+  renderProducts();
+  renderCart();
+}
+
+function removeSize(sku, size) {
+  const key = sku + '-' + size;
+  if (!cart[key]) return;
+  cart[key].qty -= 1;
+  if (cart[key].qty <= 0) delete cart[key];
   renderProducts();
   renderCart();
 }
@@ -527,7 +580,7 @@ function renderCart() {
   el.innerHTML = items.map(i => `
     <div class="cart-item">
       <div>
-        <div class="cart-item-name">${i.name}</div>
+        <div class="cart-item-name">${i.name} ${i.qty > 1 ? `× ${i.qty}` : ''}</div>
         <div class="cart-item-sub">${i.sku} &nbsp;/&nbsp; ${i.size}</div>
       </div>
       <button class="remove-btn" onclick="removeItem('${i.sku}-${i.size}')">×</button>
@@ -535,7 +588,7 @@ function renderCart() {
 }
 
 function removeItem(key) {
-  delete cart[key];
+  delete cart[key]; // 장바구니에서 전체 삭제
   renderProducts();
   renderCart();
 }
@@ -559,7 +612,14 @@ async function saveCart() {
   btn.textContent = 'Saving...';
 
   try {
-    await api({ action: 'addToCart', ticketNo: String(ticketNo), items });
+    // qty만큼 펼쳐서 전송 (Apps Script가 행 단위로 처리하므로)
+    const expandedItems = [];
+    items.forEach(i => {
+      for (let q = 0; q < i.qty; q++) {
+        expandedItems.push({ sku: i.sku, name: i.name, size: i.size });
+      }
+    });
+    await api({ action: 'addToCart', ticketNo: String(ticketNo), items: expandedItems });
     document.getElementById('savedNote').textContent = 'Awaiting staff confirmation';
     updateStatusBar('찜');
     showToast('저장됐어요');
