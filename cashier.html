@@ -512,45 +512,12 @@ async function resetDrop() {
 
 // ── 유틸 ──────────────────────────────────────────────
 async function api(body) {
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(body)
-    });
-    
-    const text = await res.text();
-    
-    // 화면 상단에 디버그 정보 큰 박스로 표시
-    let debugBox = document.getElementById('debugBox');
-    if (!debugBox) {
-      debugBox = document.createElement('div');
-      debugBox.id = 'debugBox';
-      debugBox.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#FFE0E0;border-bottom:3px solid red;padding:16px;z-index:99999;font-family:monospace;font-size:12px;word-break:break-all;max-height:60vh;overflow-y:auto;color:#000;';
-      document.body.appendChild(debugBox);
-    }
-    debugBox.innerHTML = `
-      <div style="font-weight:bold;margin-bottom:8px;">DEBUG (탭해서 닫기)</div>
-      <div><strong>액션:</strong> ${body.action}</div>
-      <div><strong>상태 코드:</strong> ${res.status}</div>
-      <div><strong>응답 (처음 800자):</strong></div>
-      <div style="background:white;padding:8px;margin-top:4px;">${text.substring(0, 800).replace(/</g, '&lt;')}</div>
-    `;
-    debugBox.onclick = () => debugBox.remove();
-    
-    return JSON.parse(text);
-  } catch(e) {
-    let debugBox = document.getElementById('debugBox');
-    if (!debugBox) {
-      debugBox = document.createElement('div');
-      debugBox.id = 'debugBox';
-      debugBox.style.cssText = 'position:fixed;top:0;left:0;right:0;background:#FFE0E0;border-bottom:3px solid red;padding:16px;z-index:99999;font-family:monospace;font-size:12px;';
-      document.body.appendChild(debugBox);
-    }
-    debugBox.innerHTML = '<div style="font-weight:bold;">에러:</div>' + e.message;
-    debugBox.onclick = () => debugBox.remove();
-    throw e;
-  }
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(body)
+  });
+  return res.json();
 }
 
 let toastTimer;
