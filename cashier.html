@@ -512,12 +512,22 @@ async function resetDrop() {
 
 // ── 유틸 ──────────────────────────────────────────────
 async function api(body) {
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify(body)
-  });
-  return res.json();
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(body)
+    });
+    
+    const text = await res.text();
+    console.log('API 응답 (원본):', text);
+    alert('응답 상태: ' + res.status + '\n응답 내용: ' + text.substring(0, 500));
+    
+    return JSON.parse(text);
+  } catch(e) {
+    alert('에러: ' + e.message);
+    throw e;
+  }
 }
 
 let toastTimer;
