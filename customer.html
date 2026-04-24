@@ -694,9 +694,19 @@ function removeItem(key) {
   renderCart();
 }
 
+let lastSaveTime = 0;
+const SAVE_COOLDOWN = 3000;
+
 async function saveCart() {
   const items = Object.values(cart);
   if (items.length === 0) { showToast('먼저 제품을 선택해주세요'); return; }
+
+  const now = Date.now();
+  if (now - lastSaveTime < SAVE_COOLDOWN) {
+    showToast('잠시 후 다시 시도해주세요');
+    return;
+  }
+  lastSaveTime = now;
 
   const btn = document.getElementById('saveBtn');
   const isUpdate = btn.textContent === 'Update Selection';
