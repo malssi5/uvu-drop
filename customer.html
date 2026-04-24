@@ -721,6 +721,11 @@ function showComplete() {
   document.getElementById('completeView').style.display = 'flex';
 }
 
+function startNewSession() {
+  localStorage.removeItem('uvu_session');
+  location.reload();
+}
+
 async function api(body) {
   const res = await fetch(API_URL, {
     method: 'POST',
