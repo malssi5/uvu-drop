@@ -376,6 +376,38 @@ header {
   <div class="qr-guide-top">직원에게 이 화면을 보여주세요</div>
   <div class="qr-box"><div id="qrCode"></div></div>
   <div class="qr-guide-bottom">직원이 확인 후 자동으로 처리됩니다</div>
+  
+  <div style="
+    width: 100%;
+    max-width: 320px;
+    margin-top: 40px;
+    padding: 20px;
+    border: 1px solid var(--border);
+    background: var(--off-white);
+  ">
+    <div style="
+      font-size: 9px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--mid);
+      margin-bottom: 16px;
+      text-align: center;
+    ">My Selection</div>
+    <div id="qrSelectionList" style="font-family: var(--sans);"></div>
+  </div>
+  
+  <button onclick="editSelection()" style="
+    margin-top: 20px;
+    padding: 12px 32px;
+    background: transparent;
+    border: 1px solid var(--border);
+    font-family: var(--sans);
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--mid);
+    cursor: pointer;
+  ">← 선택 변경</button>
 </div>
 
 <!-- Confirmed 화면 -->
@@ -667,6 +699,7 @@ async function saveCart() {
   if (items.length === 0) { showToast('먼저 제품을 선택해주세요'); return; }
 
   const btn = document.getElementById('saveBtn');
+  const isUpdate = btn.textContent === 'Update Selection';
   btn.disabled = true;
   btn.textContent = 'Saving...';
 
@@ -687,7 +720,7 @@ async function saveCart() {
       return;
     }
 
-    showToast('저장됐어요');
+    showToast(isUpdate ? '수정 완료' : '저장됐어요');
     showQRCode();
   } catch(e) {
     showToast('저장 실패 — 다시 시도해주세요');
@@ -704,13 +737,54 @@ function showQRCode() {
   const qrEl = document.getElementById('qrCode');
   qrEl.innerHTML = '';
   new QRCode(qrEl, {
-    text: sessionId,
-    width: 220,
-    height: 220,
-    colorDark: '#0A0A0A',
-    colorLight: '#FAF8F5',
+    text: sessionId, width: 220, height: 220,
+    colorDark: '#0A0A0A', colorLight: '#FAF8F5',
     correctLevel: QRCode.CorrectLevel.M
   });
+  
+  renderQRSelection();
+}
+
+function renderQRSelection() {
+  const items = Object.values(cart);
+  const el = document.getElementById('qrSelectionList');
+  
+  if (items.length === 0) {
+    api({ action: 'getOrder', sessionId }).then(res => {
+      if (res.items && res.items.length > 0) {
+        el.innerHTML = res.items.map(i => `
+          <div style="
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 10px;
+            letter-spacing: 1px;
+          ">
+            <span style="text-transform: uppercase; color: var(--black);">${i.name}</span>
+            <span style="color: var(--mid);">${i.size}${i.qty > 1 ? ' × ' + i.qty : ''}</span>
+          </div>
+        `).join('');
+      } else {
+        el.innerHTML = '<div style="font-size:10px; color:var(--mid); text-align:center;">선택 내역 없음</div>';
+      }
+    });
+    return;
+  }
+  
+  el.innerHTML = items.map(i => `
+    <div style="
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 10px;
+      letter-spacing: 1px;
+    ">
+      <span style="text-transform: uppercase; color: var(--black);">${i.name}</span>
+      <span style="color: var(--mid);">${i.size}${i.qty > 1 ? ' × ' + i.qty : ''}</span>
+    </div>
+  `).join('');
 }
 
 function showComplete() {
@@ -719,6 +793,38 @@ function showComplete() {
   document.getElementById('confirmedView').style.display = 'none';
   document.getElementById('bottomBar').style.display = 'none';
   document.getElementById('completeView').style.display = 'flex';
+}
+
+async function editSelection() {
+  const order = await api({ action: 'getOrder', sessionId });
+  
+  if (order.status && order.status !== '찜') {
+    showToast('이미 확정된 주문은 수정할 수 없습니다');
+    return;
+  }
+  
+  cart = {};
+  if (order.items) {
+    order.items.forEach(item => {
+      const key = item.sku + '-' + item.size;
+      if (cart[key]) {
+        cart[key].qty += 1;
+      } else {
+        cart[key] = { sku: item.sku, name: item.name, size: item.size, qty: 1 };
+      }
+    });
+  }
+  
+  document.getElementById('qrView').style.display = 'none';
+  document.getElementById('mainView').style.display = 'block';
+  document.getElementById('bottomBar').style.display = 'block';
+  
+  renderProducts();
+  renderCart();
+  
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = false;
+  btn.textContent = 'Update Selection';
 }
 
 function startNewSession() {
