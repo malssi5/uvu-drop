@@ -220,6 +220,25 @@ header {
   <div class="empty-state">확정된 주문이 없습니다</div>
 </div>
 
+<button class="cleanup-btn" onclick="cleanupStaleCart()" 
+  style="
+    position: fixed; 
+    bottom: 24px; 
+    right: 180px;
+    background: transparent; 
+    border: 1px solid var(--mid);
+    color: var(--mid); 
+    font-family: var(--sans);
+    font-size: 11px; 
+    letter-spacing: 2px; 
+    text-transform: uppercase;
+    padding: 14px 20px; 
+    cursor: pointer;
+    transition: opacity 0.15s; 
+    font-weight: 600;
+  ">
+  찜 정리
+</button>
 <button class="inventory-toggle" onclick="toggleInventory()">재고 현황</button>
 
 <div class="inventory-panel" id="inventoryPanel">
@@ -374,6 +393,22 @@ async function completePicking(ticketNo, btn) {
   }
 }
 
+async function cleanupStaleCart() {
+  if (!confirm('2시간 이상 지난 미확정 찜을 삭제할까요?\n(매장 밖에서 저장만 하고 오지 않은 주문)')) return;
+  
+  try {
+    const res = await api({ action: 'cleanupStaleCart' });
+    if (res.success) {
+      alert(`${res.cleaned}개의 미확정 찜이 정리되었습니다`);
+      load();
+    } else {
+      alert('정리 실패');
+    }
+  } catch(e) {
+    alert('정리 실패');
+  }
+}
+  
 async function toggleInventory() {
   const panel = document.getElementById('inventoryPanel');
   panel.classList.toggle('open');
