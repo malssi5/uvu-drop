@@ -225,16 +225,16 @@ header {
 </header>
 
 <div class="tabs">
-  <div class="tab active" id="tab-scan" onclick="switchTab('scan')">QR 스캔</div>
-  <div class="tab" id="tab-carts" onclick="switchTab('carts')">찜 목록</div>
-  <div class="tab" id="tab-payment" onclick="switchTab('payment')">결제 대기</div>
+  <div class="tab active" id="tab-scan" data-action="switch-tab" data-tab="scan">QR 스캔</div>
+  <div class="tab" id="tab-carts" data-action="switch-tab" data-tab="carts">찜 목록</div>
+  <div class="tab" id="tab-payment" data-action="switch-tab" data-tab="payment">결제 대기</div>
 </div>
 
 <!-- QR 스캔 탭 -->
 <div id="view-scan" class="section">
-  <button class="reset-btn" onclick="resetDrop()">드롭 초기화</button>
+  <button class="reset-btn" data-action="reset-drop">드롭 초기화</button>
   <div id="qrReader"></div>
-  <button class="scan-btn" id="scanBtn" onclick="startScanner()">QR 스캐너 시작</button>
+  <button class="scan-btn" id="scanBtn" data-action="start-scanner">QR 스캐너 시작</button>
   <div id="previewArea"></div>
 </div>
 
@@ -260,6 +260,11 @@ const STAFF_PIN = '1012'; // 실제 운영 전 변경
 const PIN_TTL_HOURS = 8;
 let currentTab = 'scan';
 let html5QrCode = null;
+
+const HTML_ESCAPE_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, ch => HTML_ESCAPE_MAP[ch]);
+}
 
 // PIN 세션 체크
 function checkPinSession() {
@@ -378,20 +383,20 @@ function renderPreview(data, sessionId) {
   area.innerHTML = `
     <div class="preview-card">
       <div class="preview-header">
-        <div class="preview-ticket-num">${data.ticketNo ? 'No.' + data.ticketNo : '찜 확인'}</div>
-        <div class="preview-status">${statusMap[data.status] || ''}</div>
+        <div class="preview-ticket-num">${data.ticketNo ? 'No.' + escapeHtml(data.ticketNo) : '찜 확인'}</div>
+        <div class="preview-status">${escapeHtml(statusMap[data.status] || '')}</div>
       </div>
       ${data.items.map(item => `
         <div class="preview-item">
           <div>
-            <div class="preview-name">${item.name}</div>
-            <div class="preview-sku">${item.sku} × ${item.qty || 1}</div>
+            <div class="preview-name">${escapeHtml(item.name)}</div>
+            <div class="preview-sku">${escapeHtml(item.sku)} × ${item.qty || 1}</div>
           </div>
-          <div class="preview-size">${item.size}</div>
+          <div class="preview-size">${escapeHtml(item.size)}</div>
         </div>`).join('')}
       <div class="action-row">
         ${!isConfirmed
-          ? `<button class="action-btn primary" onclick="confirmBySession('${sessionId}', this)">확정</button>`
+          ? `<button class="action-btn primary" data-action="confirm-session" data-session-id="${escapeHtml(sessionId)}">확정</button>`
           : `<button class="action-btn" disabled>처리됨</button>`}
       </div>
     </div>`;
@@ -439,19 +444,19 @@ async function loadPendingCarts() {
     el.innerHTML = carts.map(cart => `
       <div class="preview-card">
         <div class="preview-header">
-          <div class="preview-ticket-num">찜 #${cart.sessionId.slice(-4)}</div>
+          <div class="preview-ticket-num">찜 #${escapeHtml(cart.sessionId.slice(-4))}</div>
           <div class="preview-status">${cart.items.length}개 선택</div>
         </div>
         ${cart.items.map(item => `
           <div class="preview-item">
             <div>
-              <div class="preview-name">${item.name}</div>
-              <div class="preview-sku">${item.sku} × ${item.qty || 1}</div>
+              <div class="preview-name">${escapeHtml(item.name)}</div>
+              <div class="preview-sku">${escapeHtml(item.sku)} × ${item.qty || 1}</div>
             </div>
-            <div class="preview-size">${item.size}</div>
+            <div class="preview-size">${escapeHtml(item.size)}</div>
           </div>`).join('')}
         <div class="action-row">
-          <button class="action-btn primary" onclick="confirmBySession('${cart.sessionId}', this)">확정</button>
+          <button class="action-btn primary" data-action="confirm-session" data-session-id="${escapeHtml(cart.sessionId)}">확정</button>
         </div>
       </div>`).join('');
   } catch(e) {}
@@ -471,15 +476,15 @@ async function loadReadyOrders() {
 
     el.innerHTML = orders.map(order => `
       <div class="ready-card">
-        <div class="ready-ticket-num">No.${order.ticketNo}</div>
+        <div class="ready-ticket-num">No.${escapeHtml(order.ticketNo)}</div>
         <div class="ready-items">
           ${order.items.map(item => `
             <div class="ready-item-row">
-              <span class="ready-item-name">${item.name} × ${item.qty || 1}</span>
-              <span class="ready-item-size">${item.size}</span>
+              <span class="ready-item-name">${escapeHtml(item.name)} × ${item.qty || 1}</span>
+              <span class="ready-item-size">${escapeHtml(item.size)}</span>
             </div>`).join('')}
         </div>
-        <button class="pay-btn" onclick="completePayment('${order.ticketNo}', this)">결제<br>완료</button>
+        <button class="pay-btn" data-action="complete-payment" data-ticket="${escapeHtml(order.ticketNo)}">결제<br>완료</button>
       </div>`).join('');
   } catch(e) {}
 }
@@ -531,6 +536,19 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
 }
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (!el || el.disabled) return;
+  const { action, tab, sessionId, ticket } = el.dataset;
+  switch (action) {
+    case 'switch-tab': switchTab(tab); break;
+    case 'reset-drop': resetDrop(); break;
+    case 'start-scanner': startScanner(); break;
+    case 'confirm-session': confirmBySession(sessionId, el); break;
+    case 'complete-payment': completePayment(ticket, el); break;
+  }
+});
 </script>
 
 <script>
