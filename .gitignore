@@ -1,0 +1,29 @@
+# Secrets — DO NOT COMMIT
+*.env
+*.env.local
+*secret*
+*credentials*
+firebase-admin*.json
+google-service-account*.json
+service-account*.json
+
+# Apps Script files (managed in Apps Script editor only)
+Code.gs
+*.gs
+
+# Local development
+node_modules/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Build output
+dist/
+build/
+*.log
+
+# Backup files
+*.bak
+*.backup
+*~
