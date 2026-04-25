@@ -223,31 +223,31 @@ header {
   <div class="empty-state">확정된 주문이 없습니다</div>
 </div>
 
-<button class="cleanup-btn" onclick="cleanupStaleCart()" 
+<button class="cleanup-btn" data-action="cleanup-stale-cart"
   style="
-    position: fixed; 
-    bottom: 24px; 
+    position: fixed;
+    bottom: 24px;
     right: 180px;
-    background: transparent; 
+    background: transparent;
     border: 1px solid var(--mid);
-    color: var(--mid); 
+    color: var(--mid);
     font-family: var(--sans);
-    font-size: 11px; 
-    letter-spacing: 2px; 
+    font-size: 11px;
+    letter-spacing: 2px;
     text-transform: uppercase;
-    padding: 14px 20px; 
+    padding: 14px 20px;
     cursor: pointer;
-    transition: opacity 0.15s; 
+    transition: opacity 0.15s;
     font-weight: 600;
   ">
   찜 정리
 </button>
-<button class="inventory-toggle" onclick="toggleInventory()">재고 현황</button>
+<button class="inventory-toggle" data-action="toggle-inventory">재고 현황</button>
 
 <div class="inventory-panel" id="inventoryPanel">
   <div class="inv-header">
     <div class="inv-title">Inventory</div>
-    <button class="close-inv" onclick="toggleInventory()">×</button>
+    <button class="close-inv" data-action="toggle-inventory">×</button>
   </div>
   <div id="inventoryList">
     <div style="font-size:11px;letter-spacing:2px;color:var(--light);text-transform:uppercase;font-weight:600">Loading</div>
@@ -274,6 +274,11 @@ const firebaseConfig = {
 
 const PIN_TTL_HOURS = 8;
 let orderTimestamps = {};
+
+const HTML_ESCAPE_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, ch => HTML_ESCAPE_MAP[ch]);
+}
 
 // PIN 세션 체크
 function checkPinSession() {
@@ -360,7 +365,7 @@ function renderOrders(orders, todayDoneCount) {
     return `
       <div class="order-card${isUrgent ? ' urgent' : ''}">
         <div class="order-header">
-          <div class="ticket-num">No.${order.ticketNo}</div>
+          <div class="ticket-num">No.${escapeHtml(order.ticketNo)}</div>
           <div class="wait-time${isUrgent ? ' urgent' : ''}">
             ${elapsed > 0 ? elapsed + '분 전' : '방금'}
           </div>
@@ -369,13 +374,13 @@ function renderOrders(orders, todayDoneCount) {
           ${order.items.map(item => `
             <div class="item-row">
               <div>
-                <div class="item-name">${item.name}</div>
-                <div class="item-sku">${item.sku} × ${item.qty || 1}</div>
+                <div class="item-name">${escapeHtml(item.name)}</div>
+                <div class="item-sku">${escapeHtml(item.sku)} × ${item.qty || 1}</div>
               </div>
-              <div class="item-size">${item.size}</div>
+              <div class="item-size">${escapeHtml(item.size)}</div>
             </div>`).join('')}
         </div>
-        <button class="pick-btn" onclick="completePicking('${order.ticketNo}', this)">
+        <button class="pick-btn" data-action="complete-picking" data-ticket="${escapeHtml(order.ticketNo)}">
           Picking Complete
         </button>
       </div>`;
@@ -434,11 +439,11 @@ async function loadInventory() {
 
     document.getElementById('inventoryList').innerHTML = Object.values(grouped).map(p => `
       <div class="inv-item">
-        <div class="inv-name">${p.name}</div>
+        <div class="inv-name">${escapeHtml(p.name)}</div>
         <div class="inv-sizes">
           ${p.sizes.map(s => {
             const cls = s.avail <= 0 ? 'out' : s.avail <= 2 ? 'low' : 'ok';
-            return `<div class="inv-size ${cls}">${s.size} (${s.avail})</div>`;
+            return `<div class="inv-size ${cls}">${escapeHtml(s.size)} (${s.avail})</div>`;
           }).join('')}
         </div>
       </div>`).join('');
@@ -453,10 +458,21 @@ async function api(body) {
   });
   return res.json();
 }
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (!el || el.disabled) return;
+  const { action, ticket } = el.dataset;
+  switch (action) {
+    case 'complete-picking': completePicking(ticket, el); break;
+    case 'cleanup-stale-cart': cleanupStaleCart(); break;
+    case 'toggle-inventory': toggleInventory(); break;
+  }
+});
 </script>
 
 <script>
-const logoUrl = 'https://raw.githubusercontent.com/malssi5/uvu-drop/main/image/uvu_logo_pink.png';
+const logoUrl = 'https://raw.githubusercontent.com/malssi5/cycling-strava-stretching/main/image/uvu_logo_pink.png';
 document.getElementById('logoImg').src = logoUrl;
 document.getElementById('pinLogo').src = logoUrl;
 </script>
