@@ -399,7 +399,7 @@ header {
     <div id="qrSelectionList" style="font-family: var(--sans);"></div>
   </div>
   
-  <button onclick="editSelection()" style="
+  <button data-action="edit-selection" style="
     margin-top: 20px;
     padding: 12px 32px;
     background: transparent;
@@ -436,7 +436,7 @@ header {
     <a class="complete-kakao-btn" href="http://pf.kakao.com/_YwyMX?utm_source=drop&utm_medium=purchase&utm_campaign=seongsu" target="_blank">카카오 채널 추가</a>
   </div>
   <div style="margin-top: 32px; width: 100%; max-width: 280px;">
-    <button onclick="startNewSession()" style="
+    <button data-action="start-new-session" style="
       width: 100%;
       padding: 14px;
       background: transparent;
@@ -452,7 +452,7 @@ header {
 </div>
 
 <div class="bottom-bar" id="bottomBar">
-  <button class="save-btn" id="saveBtn" onclick="saveCart()">Save Selection</button>
+  <button class="save-btn" id="saveBtn" data-action="save">Save Selection</button>
   <div class="saved-note" id="savedNote"></div>
 </div>
 
@@ -475,6 +475,11 @@ const firebaseConfig = {
 
 const MAX_QTY_PER_SKU = 2;
 const SESSION_TTL_HOURS = 24;
+
+const HTML_ESCAPE_MAP = { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' };
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, ch => HTML_ESCAPE_MAP[ch]);
+}
 
 // sessionId 복원 or 생성
 function getOrCreateSessionId() {
@@ -605,21 +610,23 @@ function renderProducts() {
   container.innerHTML =
     `<div class="drop-header">
        <div class="drop-title">Today's Drop</div>
-       <div class="drop-date">${today}</div>
+       <div class="drop-date">${escapeHtml(today)}</div>
      </div>` +
     skus.map(p => {
       const cartQty = Object.values(cart).filter(i => i.sku === p.sku).reduce((s, i) => s + i.qty, 0);
       const atLimit = cartQty >= MAX_QTY_PER_SKU;
       const limitText = atLimit ? `Max ${MAX_QTY_PER_SKU} per item reached` : `Max ${MAX_QTY_PER_SKU} per item`;
+      const skuAttr = escapeHtml(p.sku);
+      const nameAttr = escapeHtml(p.name);
 
       return `
         <div class="product-card">
           ${p.imgUrl
-            ? `<img class="product-img" src="${p.imgUrl}" alt="${p.name}" loading="lazy">`
+            ? `<img class="product-img" src="${escapeHtml(p.imgUrl)}" alt="${nameAttr}" loading="lazy">`
             : `<div class="product-img-placeholder"></div>`}
           <div class="product-info">
-            <div class="product-name">${p.name}</div>
-            <div class="product-sku">${p.sku}</div>
+            <div class="product-name">${escapeHtml(p.name)}</div>
+            <div class="product-sku">${escapeHtml(p.sku)}</div>
             <div class="product-limit${atLimit ? ' at-limit' : ''}">${limitText}</div>
             <div class="size-row">
               ${p.sizes.map(s => {
@@ -627,18 +634,19 @@ function renderProducts() {
                 const qty = cart[key] ? cart[key].qty : 0;
                 const soldout = s.avail <= 0;
                 const blocked = atLimit && qty === 0;
+                const sizeAttr = escapeHtml(s.size);
                 if (qty > 0) {
                   return `<div class="qty-ctrl">
-                    <button class="qty-btn" onclick="removeSize('${p.sku}','${s.size}')">−</button>
-                    <span class="qty-num">${s.size} × ${qty}</span>
-                    <button class="qty-btn" onclick="addSize('${p.sku}','${p.name}','${s.size}')" ${atLimit ? 'disabled' : ''}>+</button>
+                    <button class="qty-btn" data-action="remove-size" data-sku="${skuAttr}" data-size="${sizeAttr}">−</button>
+                    <span class="qty-num">${escapeHtml(s.size)} × ${qty}</span>
+                    <button class="qty-btn" data-action="add-size" data-sku="${skuAttr}" data-name="${nameAttr}" data-size="${sizeAttr}" ${atLimit ? 'disabled' : ''}>+</button>
                   </div>`;
                 }
                 return `<button
                   class="size-btn"
                   ${soldout || blocked ? 'disabled' : ''}
-                  onclick="addSize('${p.sku}','${p.name}','${s.size}')"
-                >${s.size}</button>`;
+                  data-action="add-size" data-sku="${skuAttr}" data-name="${nameAttr}" data-size="${sizeAttr}"
+                >${escapeHtml(s.size)}</button>`;
               }).join('')}
             </div>
           </div>
@@ -687,10 +695,10 @@ function renderCart() {
   el.innerHTML = items.map(i => `
     <div class="cart-item">
       <div>
-        <div class="cart-item-name">${i.name} ${i.qty > 1 ? `× ${i.qty}` : ''}</div>
-        <div class="cart-item-sub">${i.sku} / ${i.size}</div>
+        <div class="cart-item-name">${escapeHtml(i.name)} ${i.qty > 1 ? `× ${i.qty}` : ''}</div>
+        <div class="cart-item-sub">${escapeHtml(i.sku)} / ${escapeHtml(i.size)}</div>
       </div>
-      <button class="remove-btn" onclick="removeItem('${i.sku}-${i.size}')">×</button>
+      <button class="remove-btn" data-action="remove-item" data-key="${escapeHtml(i.sku + '-' + i.size)}">×</button>
     </div>`).join('');
 }
 
@@ -777,8 +785,8 @@ function renderQRSelection() {
             font-size: 10px;
             letter-spacing: 1px;
           ">
-            <span style="text-transform: uppercase; color: var(--black);">${i.name}</span>
-            <span style="color: var(--mid);">${i.size}${i.qty > 1 ? ' × ' + i.qty : ''}</span>
+            <span style="text-transform: uppercase; color: var(--black);">${escapeHtml(i.name)}</span>
+            <span style="color: var(--mid);">${escapeHtml(i.size)}${i.qty > 1 ? ' × ' + i.qty : ''}</span>
           </div>
         `).join('');
       } else {
@@ -787,7 +795,7 @@ function renderQRSelection() {
     });
     return;
   }
-  
+
   el.innerHTML = items.map(i => `
     <div style="
       display: flex;
@@ -797,8 +805,8 @@ function renderQRSelection() {
       font-size: 10px;
       letter-spacing: 1px;
     ">
-      <span style="text-transform: uppercase; color: var(--black);">${i.name}</span>
-      <span style="color: var(--mid);">${i.size}${i.qty > 1 ? ' × ' + i.qty : ''}</span>
+      <span style="text-transform: uppercase; color: var(--black);">${escapeHtml(i.name)}</span>
+      <span style="color: var(--mid);">${escapeHtml(i.size)}${i.qty > 1 ? ' × ' + i.qty : ''}</span>
     </div>
   `).join('');
 }
@@ -865,6 +873,20 @@ function showToast(msg) {
   clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
 }
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (!el || el.disabled) return;
+  const { action, sku, name, size, key } = el.dataset;
+  switch (action) {
+    case 'add-size': addSize(sku, name, size); break;
+    case 'remove-size': removeSize(sku, size); break;
+    case 'remove-item': removeItem(key); break;
+    case 'save': saveCart(); break;
+    case 'edit-selection': editSelection(); break;
+    case 'start-new-session': startNewSession(); break;
+  }
+});
 
 init();
 </script>
