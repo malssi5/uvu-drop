@@ -677,8 +677,10 @@ function addSize(sku, name, size) {
     showToast(`품목당 최대 ${MAX_QTY_PER_SKU}개까지 가능합니다`);
     return;
   }
+  const product = inventory.find(item => item['SKU'] === sku);
+  const price = product ? (product['가격'] || 0) : 0;
   if (cart[key]) cart[key].qty += 1;
-  else cart[key] = { sku, name, size, qty: 1 };
+  else cart[key] = { sku, name, size, qty: 1, price };
   renderProducts();
   renderCart();
 }
