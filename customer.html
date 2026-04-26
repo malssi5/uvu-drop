@@ -805,7 +805,11 @@ function renderQRSelection() {
     return;
   }
   
-  const total = items.reduce((sum, i) => sum + (i.price || 0) * i.qty, 0);
+  const getPrice = (sku) => {
+  const product = inventory.find(p => p['SKU'] === sku);
+  return product ? (product['가격'] || 0) : 0;
+};
+const total = items.reduce((sum, i) => sum + getPrice(i.sku) * i.qty, 0);
   
   el.innerHTML = items.map(i => `
     <div style="
@@ -817,7 +821,7 @@ function renderQRSelection() {
       letter-spacing: 1px;
     ">
       <span style="text-transform: uppercase; color: var(--black);">${escapeHtml(i.name)}</span>
-      <span style="color: var(--mid);">${escapeHtml(i.size)}${i.qty > 1 ? ' × ' + i.qty : ''} · ₩${((i.price || 0) * i.qty).toLocaleString('ko-KR')}</span>
+      <span style="color: var(--mid);">${escapeHtml(i.size)}${i.qty > 1 ? ' × ' + i.qty : ''} · ₩${(getPrice(i.sku) * i.qty).toLocaleString('ko-KR')}</span>
     </div>
   `).join('') + `
     <div style="
