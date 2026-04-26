@@ -802,7 +802,9 @@ function renderQRSelection() {
     });
     return;
   }
-
+  
+  const total = items.reduce((sum, i) => sum + (i.price || 0) * i.qty, 0);
+  
   el.innerHTML = items.map(i => `
     <div style="
       display: flex;
@@ -813,9 +815,23 @@ function renderQRSelection() {
       letter-spacing: 1px;
     ">
       <span style="text-transform: uppercase; color: var(--black);">${escapeHtml(i.name)}</span>
-      <span style="color: var(--mid);">${escapeHtml(i.size)}${i.qty > 1 ? ' × ' + i.qty : ''}</span>
+      <span style="color: var(--mid);">${escapeHtml(i.size)}${i.qty > 1 ? ' × ' + i.qty : ''} · ₩${((i.price || 0) * i.qty).toLocaleString('ko-KR')}</span>
     </div>
-  `).join('');
+  `).join('') + `
+    <div style="
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0 4px;
+      margin-top: 8px;
+      border-top: 1px solid var(--black);
+      font-size: 11px;
+      letter-spacing: 1.5px;
+    ">
+      <span style="text-transform: uppercase; color: var(--mid); font-weight: 500;">Total</span>
+      <span style="color: var(--black); font-weight: 700; font-size: 13px;">₩${total.toLocaleString('ko-KR')}</span>
+    </div>
+  `;
 }
 
 function showComplete() {
