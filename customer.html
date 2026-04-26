@@ -589,7 +589,13 @@ function renderProducts() {
   inventory.forEach(item => {
     const sku = item['SKU'];
     if (!grouped[sku]) {
-      grouped[sku] = { sku, name: item['제품명'], imgUrl: item['이미지URL'] || '', sizes: [] };
+      grouped[sku] = { 
+        sku, 
+        name: item['제품명'], 
+        imgUrl: item['이미지URL'] || '', 
+        price: item['가격'] || 0,
+        sizes: [] 
+      };
     }
     const avail = item['_avail'] !== undefined
       ? item['_avail']
@@ -627,6 +633,7 @@ function renderProducts() {
           <div class="product-info">
             <div class="product-name">${escapeHtml(p.name)}</div>
             <div class="product-sku">${escapeHtml(p.sku)}</div>
+            <div class="product-price">₩${p.price.toLocaleString('ko-KR')}</div>
             <div class="product-limit${atLimit ? ' at-limit' : ''}">${limitText}</div>
             <div class="size-row">
               ${p.sizes.map(s => {
