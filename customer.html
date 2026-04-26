@@ -513,7 +513,11 @@ db.ref('.info/connected').on('value', snap => {
 });
 
 async function init() {
-  await loadInventory();
+  // 두 GAS 호출을 병렬로 실행 (성능 개선)
+  const [_, order] = await Promise.all([
+    loadInventory(),
+    api({ action: 'getOrder', sessionId })
+  ]);
 
   // 주문 상태 실시간 구독
   db.ref(`orders/${sessionId}`).on('value', snap => {
@@ -534,7 +538,6 @@ async function init() {
   });
 
   // 새로고침 복원: 이미 찜 상태면 QR 화면 자동 표시
-  const order = await api({ action: 'getOrder', sessionId });
   if (order.status === '찜') {
     showQRCode();
   } else if (order.status && order.status !== '찜') {
