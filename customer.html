@@ -853,7 +853,8 @@ async function editSelection() {
 
 function startNewSession() {
   localStorage.removeItem('uvu_session');
-  location.reload();
+  // 캐시 우회를 위해 항상 다른 URL로 접속
+  window.location.href = 'customer.html?t=' + Date.now();
 }
 
 async function api(body) {
