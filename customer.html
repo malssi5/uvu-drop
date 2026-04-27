@@ -79,7 +79,7 @@ header {
   background: #FEE500;
 }
 .kakao-banner:active { background: #F4DC00; }
-.kakao-dot { width: 8px; height: 8px; background: #181600; border-radius: 50%; flex-shrink: 0; }
+.kakao-icon { height: 28px; width: auto; flex-shrink: 0; }
 .kakao-text { flex: 1; }
 .kakao-title { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #181600; margin-bottom: 3px; }
 .kakao-sub  { font-size: 10px; color: #4F4A00; line-height: 1.5; }
@@ -313,13 +313,12 @@ header {
 .complete-kakao { width: 100%; max-width: 280px; border-top: 1px solid var(--border); padding-top: 28px; }
 .complete-kakao-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--mid); margin-bottom: 16px; line-height: 2; }
 .complete-kakao-btn {
-  display: block; width: 100%; padding: 14px;
-  border: 1px solid #FEE500;
-  background: #FEE500;
-  font-family: var(--sans); font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
-  color: #181600; text-decoration: none; font-weight: 500;
+  display: block; width: 100%;
+  text-decoration: none;
+  transition: opacity 0.2s;
 }
-.complete-kakao-btn:active { background: #F4DC00; border-color: #F4DC00; }
+.complete-kakao-btn:active { opacity: 0.7; }
+.complete-kakao-btn img { width: 100%; height: auto; display: block; }
 
 .toast {
   position: fixed;
@@ -434,7 +433,9 @@ header {
   <div class="complete-sub">오늘도 달려주셔서 감사합니다<br>You vs You</div>
   <div class="complete-kakao">
     <div class="complete-kakao-label">다음 드롭도<br>놓치지 마세요</div>
-    <a class="complete-kakao-btn" href="http://pf.kakao.com/_YwyMX?utm_source=drop&utm_medium=purchase&utm_campaign=seongsu" target="_blank">카카오 채널 추가</a>
+    <a class="complete-kakao-btn" href="http://pf.kakao.com/_YwyMX?utm_source=drop&utm_medium=purchase&utm_campaign=seongsu" target="_blank">
+  <img src="image/kakao_channel_add.png" alt="카카오 채널 추가">
+</a>
   </div>
   <div style="margin-top: 32px; width: 100%; max-width: 280px;">
     <button data-action="start-new-session" style="
