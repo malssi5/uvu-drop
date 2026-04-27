@@ -174,7 +174,7 @@ header {
 .ready-item-size { color: var(--mid); letter-spacing: 1px; font-weight: 600; }
 
 .pay-btn {
-  padding: 14px 18px; background: var(--black); border: none;
+  padding: 14px 18px; background: var(--black); border: 1px solid var(--black);
   color: var(--off-white); font-family: var(--sans);
   font-size: 11px; font-weight: 600; letter-spacing: 3px;
   text-transform: uppercase; cursor: pointer;
@@ -183,6 +183,17 @@ header {
 }
 .pay-btn:active  { opacity: 0.8; }
 .pay-btn:disabled { opacity: 0.2; cursor: not-allowed; }
+
+/* 카드 보조 액션 (예: 수정) — pay-btn과 동일 사이즈, outline 톤 */
+.edit-card-btn {
+  padding: 24px 18px; background: var(--off-white); border: 1px solid var(--black);
+  color: var(--black); font-family: var(--sans);
+  font-size: 11px; font-weight: 600; letter-spacing: 3px;
+  text-transform: uppercase; cursor: pointer;
+  transition: background 0.15s; white-space: nowrap;
+  line-height: 1.8; text-align: center;
+}
+.edit-card-btn:active { background: var(--cream); }
 
 .empty-state {
   text-align: center; padding: 60px 20px;
@@ -693,7 +704,7 @@ async function loadReadyOrders() {
               <span class="ready-item-size">${escapeHtml(item.size)}</span>
             </div>`).join('')}
         </div>
-        <button class="action-btn" data-action="open-edit" data-ticket="${escapeHtml(order.ticketNo)}" style="flex: 0 0 auto; padding: 14px 12px; line-height: 1.8; white-space: nowrap;">수정</button>
+        <button class="edit-card-btn" data-action="open-edit" data-ticket="${escapeHtml(order.ticketNo)}">수정</button>
         <button class="pay-btn" data-action="complete-payment" data-ticket="${escapeHtml(order.ticketNo)}">결제<br>완료</button>
       </div>`).join('');
   } catch(e) {}

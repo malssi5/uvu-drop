@@ -313,12 +313,14 @@ header {
 .complete-kakao { width: 100%; max-width: 280px; border-top: 1px solid var(--border); padding-top: 28px; }
 .complete-kakao-label { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--mid); margin-bottom: 16px; line-height: 2; }
 .complete-kakao-btn {
-  display: block; width: 100%;
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; padding: 14px 24px;
+  background: #FEE500;
   text-decoration: none;
-  transition: opacity 0.2s;
+  transition: background 0.2s;
 }
-.complete-kakao-btn:active { opacity: 0.7; }
-.complete-kakao-btn img { width: 100%; height: auto; display: block; }
+.complete-kakao-btn:active { background: #F4DC00; }
+.complete-kakao-btn img { height: 36px; width: auto; display: block; }
 
 .toast {
   position: fixed;
