@@ -27,3 +27,4 @@ build/
 *.bak
 *.backup
 *~
+apps-script/
